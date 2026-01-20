@@ -29,9 +29,6 @@ router.post("/create-post", authenticateJWT, async (req, res) => {
             }
         });
 
-        // Broadcast real-time update
-        req.io.emit('postCreated', post);
-
         res.json(post);
     } catch (err) {
         console.error("Post creation error:", err);
@@ -129,9 +126,6 @@ router.put("/:id", authenticateJWT, async (req, res) => {
             }
         });
 
-        // Broadcast real-time update
-        req.io.emit('postUpdated', updatedPost);
-
         res.json(updatedPost);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -172,9 +166,6 @@ router.delete("/:id", authenticateJWT, async (req, res) => {
         }
 
         await prisma.post.delete({ where: { id: Number(id) } });
-
-        // Broadcast real-time update
-        req.io.emit('postDeleted', id);
 
         res.json({ message: "Post deleted successfully" });
     } catch (err) {

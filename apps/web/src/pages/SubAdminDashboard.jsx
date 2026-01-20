@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { Users, FileText, UserPlus, ShieldAlert, CheckCircle2, XCircle, Lock, Edit, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { io } from 'socket.io-client';
+import { usePostsRealtime } from '../hooks/useRealtime';
 
 const SubAdminDashboard = () => {
     const { user } = useAuth();
@@ -22,25 +22,6 @@ const SubAdminDashboard = () => {
     });
     const [editingUser, setEditingUser] = useState(null);
     const [editingPost, setEditingPost] = useState(null);
-
-    useEffect(() => {
-        fetchData();
-
-        // Initialize Socket.io
-        const socket = io();
-
-        const handleRealTimeUpdate = () => {
-            fetchData();
-        };
-
-        socket.on('postCreated', handleRealTimeUpdate);
-        socket.on('postUpdated', handleRealTimeUpdate);
-        socket.on('postDeleted', handleRealTimeUpdate);
-
-        return () => {
-            socket.disconnect();
-        };
-    }, []);
 
     const fetchData = async () => {
         try {
@@ -74,6 +55,13 @@ const SubAdminDashboard = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    // Use real-time polling to keep sub-admin dashboard updated
+    usePostsRealtime(fetchData, 3000);
 
     const startEditUser = (user) => {
         if (!permissions.canUpdate) {

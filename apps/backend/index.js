@@ -9,30 +9,17 @@ import postRoutes from "./routes/postRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 
 import { prisma } from "./db.js";
-import { createServer } from "http";
-import { Server } from "socket.io";
 
 const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    credentials: true
-  }
-});
+const port = process.env.PORT || 3000;
 
-const port = 3000;
+// CORS Configuration with environment variable support
+const allowedOrigins = process.env.FRONTEND_URL 
+  ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+  : ["http://localhost:5173", "http://127.0.0.1:5173"];
 
-// Attach io to req
-app.use((req, res, next) => {
-  req.io = io;
-  next();
-});
-
-// 1. CORS Configuration
 const corsOptions = {
-  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+  origin: allowedOrigins,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
@@ -56,7 +43,11 @@ app.use("/posts", postRoutes);
 app.use("/users", userRoutes);
 
 app.get("/", (req, res) => {
-  res.send("Prisma-RBAC API is running with Socket.io");
+  res.json({ 
+    message: "Permipulse API is running",
+    status: "healthy",
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.use((req, res) => {
@@ -64,14 +55,10 @@ app.use((req, res) => {
   res.status(404).json({ error: "Not Found" });
 });
 
-
-// Export for Vercel
-export { app, httpServer, io };
-
 // Only listen when running locally
 if (process.env.NODE_ENV !== "production") {
-  httpServer.listen(port, () => {
-    console.log(`server running on ${port}`);
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
   });
 }
 

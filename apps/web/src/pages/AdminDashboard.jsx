@@ -3,7 +3,7 @@ import api from '../services/api';
 import { toast } from 'react-hot-toast';
 import { Users, FileText, UserPlus, ShieldAlert, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { io } from 'socket.io-client';
+import { usePostsRealtime } from '../hooks/useRealtime';
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState({ totalUsers: 0, totalPosts: 0 });
@@ -21,25 +21,6 @@ const AdminDashboard = () => {
         { name: 'DELETE_POST', label: 'Delete Posts', description: 'Allow sub-admin to remove any post' },
     ];
 
-    useEffect(() => {
-        fetchData();
-
-        // Initialize Socket.io
-        const socket = io();
-
-        const handleRealTimeUpdate = () => {
-            fetchData();
-        };
-
-        socket.on('postCreated', handleRealTimeUpdate);
-        socket.on('postUpdated', handleRealTimeUpdate);
-        socket.on('postDeleted', handleRealTimeUpdate);
-
-        return () => {
-            socket.disconnect();
-        };
-    }, []);
-
     const fetchData = async () => {
         try {
             const [statsRes, usersRes, postsRes] = await Promise.all([
@@ -56,6 +37,14 @@ const AdminDashboard = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    // Use real-time polling to keep admin dashboard updated
+    usePostsRealtime(fetchData, 3000);
+
 
     const togglePermission = async (userId, permissionName, currentEnabled) => {
         const previousUsers = [...users];

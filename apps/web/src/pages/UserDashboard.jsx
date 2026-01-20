@@ -5,7 +5,7 @@ import { toast } from 'react-hot-toast';
 import { FileText, Clock, TrendingUp, Send, Edit, Trash2, PlusCircle, Layout } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { io } from 'socket.io-client';
+import { usePostsRealtime } from '../hooks/useRealtime';
 
 const UserDashboard = () => {
     const { user } = useAuth();
@@ -18,25 +18,6 @@ const UserDashboard = () => {
     const [formData, setFormData] = useState({ title: '', content: '' });
     const [submitting, setSubmitting] = useState(false);
 
-    useEffect(() => {
-        fetchUserData();
-
-        // Initialize Socket.io
-        const socket = io();
-
-        const handleRealTimeUpdate = () => {
-            fetchUserData(); // Simple way to keep stats and list in sync
-        };
-
-        socket.on('postCreated', handleRealTimeUpdate);
-        socket.on('postUpdated', handleRealTimeUpdate);
-        socket.on('postDeleted', handleRealTimeUpdate);
-
-        return () => {
-            socket.disconnect();
-        };
-    }, []);
-
     const fetchUserData = async () => {
         try {
             const { data } = await api.get('/posts');
@@ -48,6 +29,14 @@ const UserDashboard = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchUserData();
+    }, []);
+
+    // Use real-time polling to keep user's posts updated
+    usePostsRealtime(fetchUserData, 3000);
+
 
     const handleCreatePost = async (e) => {
         e.preventDefault();

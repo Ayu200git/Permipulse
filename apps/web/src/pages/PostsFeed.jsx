@@ -3,7 +3,7 @@ import api from '../services/api';
 import { toast } from 'react-hot-toast';
 import { Send, FileText, User, Calendar, Quote } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { io } from 'socket.io-client';
+import { usePostsRealtime } from '../hooks/useRealtime';
 
 const PostsFeed = () => {
     const [posts, setPosts] = useState([]);
@@ -12,29 +12,6 @@ const PostsFeed = () => {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [showForm, setShowForm] = useState(false);
-
-    useEffect(() => {
-        fetchPosts();
-
-        // Initialize Socket.io
-        const socket = io();
-
-        socket.on('postCreated', (newPost) => {
-            setPosts(prevPosts => [newPost, ...prevPosts]);
-        });
-
-        socket.on('postUpdated', (updatedPost) => {
-            setPosts(prevPosts => prevPosts.map(p => p.id === updatedPost.id ? updatedPost : p));
-        });
-
-        socket.on('postDeleted', (deletedId) => {
-            setPosts(prevPosts => prevPosts.filter(p => p.id !== Number(deletedId)));
-        });
-
-        return () => {
-            socket.disconnect();
-        };
-    }, []);
 
     const fetchPosts = async () => {
         try {
@@ -46,6 +23,14 @@ const PostsFeed = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchPosts();
+    }, []);
+
+    // Use real-time polling to keep posts updated
+    usePostsRealtime(fetchPosts, 3000);
+
 
     const handleCreatePost = async (e) => {
         e.preventDefault();
