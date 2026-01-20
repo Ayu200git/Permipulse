@@ -4,11 +4,11 @@
   "main": "index.js",
   "scripts": {
     "postinstall": "prisma generate",
-    "build": "prisma generate",
-    "dev": "node index.js",
+    "build": "node init && prisma generate",
+    "dev": "node init && node index.js",
     "lint": "echo 'Backend lint'",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node init && node index.js"
   },
   "keywords": [],
   "author": "",
